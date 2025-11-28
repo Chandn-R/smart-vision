@@ -1,0 +1,33 @@
+
+# Logs - ignore locally
+logs/
+!logs/.gitkeep
+
+# Environment files for security
+.env
+*.env
+
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*.so
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Misc temporary files
+*.bak
+*.tmp
