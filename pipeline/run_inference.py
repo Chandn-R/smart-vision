@@ -8,18 +8,18 @@ ROOT_DIR = os.path.dirname(ROOT_DIR)
 sys.path.append(ROOT_DIR)
 
 from src.modeling.detectors.yolo_detector import YOLODetector
-from src.modeling.trackers.deepsort_tracker import DeepSortTracker
+from src.modeling.trackers.byte_tracker import ByteTracker
 
 MODEL_PATH = "../models/yolov11s_fine_tune.pt"
 WEBCAM_ID = 0
-CONFIDENCE_THRESHOLD = 0.5
+CONFIDENCE_THRESHOLD = 0.4
 
 CLASS_COLORS = {
     0: (0, 255, 0),  # Person: Green
     1: (0, 0, 255),  # Gun: Red
     2: (0, 0, 255),  # Long Gun: Red
     3: (0, 0, 255),  # Knife: Red
-    4: (0, 0, 255),  
+    4: (0, 0, 255),  # Blunt Weapon
     5: (0, 165, 255),  # Burglary Tool: Orange
 }
 
@@ -40,14 +40,14 @@ def run_pipeline():
 
     detector.load_model(MODEL_PATH)
 
-    tracker = DeepSortTracker(max_age=30)
+    tracker = ByteTracker()
 
     cap = cv2.VideoCapture(WEBCAM_ID)
     if not cap.isOpened():
         print(f" Error: Cannot open webcam {WEBCAM_ID}")
         return
 
-    print(" YOLO Inference Started. Press 'Q' to exit.")
+    print(" Pipeline Started with YOLO Inference and ByteTrack. Press 'Q' to exit.")
 
     while True:
         ret, frame = cap.read()
@@ -61,7 +61,6 @@ def run_pipeline():
         for result in results:
             for box in result.boxes:
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                w, h = x2 - x1, y2 - y1
 
                 conf = float(box.conf[0])
                 cls_id = int(box.cls[0])
@@ -90,38 +89,28 @@ def run_pipeline():
                     print(f" ALERT: Found {class_name}!")
 
                 elif cls_id == PERSON_CLASS_ID:
-                    # We DON'T draw yet. We send to DeepSORT first.
-                    # DeepSORT needs [x, y, w, h] format
-                    detections_for_tracking.append(([x1, y1, w, h], conf, "person"))
+                    detections_for_tracking.append(([x1, y1, x2, y2], conf, cls_id))
 
-                    # --- STEP 2: TRACKING (DeepSORT) ---
-        # Update tracker only with the people list
-        tracks = tracker.update(detections_for_tracking, frame)
+        tracked_objects = tracker.update(detections_for_tracking)
+        if len(tracked_objects) > 0:
+            for i in range(len(tracked_objects)):
+                x1, y1, x2, y2 = map(int, tracked_objects.xyxy[i])
+                track_id = int(tracked_objects.tracker_id[i])
 
-        for track in tracks:
-            # Only show confirmed tracks (ignores noise)
-            if not track.is_confirmed():
-                continue
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-            track_id = track.track_id
-            ltrb = track.to_ltrb()  # Get Left, Top, Right, Bottom
-            x1, y1, x2, y2 = map(int, ltrb)
+                label = f"ID: {track_id} Person"
+                cv2.putText(
+                    frame,
+                    label,
+                    (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2,
+                )
 
-            # Draw GREEN box for tracked people with ID
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-            label = f"ID: {track_id} Person"
-            cv2.putText(
-                frame,
-                label,
-                (x1, y1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (0, 255, 0),
-                2,
-            )
-
-        cv2.imshow("SmartVision - YOLO Test", frame)
+        cv2.imshow("SmartVision - ByteTrack", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
