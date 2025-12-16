@@ -2,7 +2,7 @@
 
 SmartVision Pro is an advanced real-time computer vision system designed to detect potential security threats such as weapons (guns, knives) and violent actions (fighting, shooting) using a multi-stage pipeline.
 
-## 🚀 Features
+##  Features
 
 - **Object Detection**: Identifies persons and weapons (handguns, rifles, knives, etc.) using a fine-tuned **YOLOv11** model.
 - **Pose Estimation**: Extracts skeletal landmarks using **MediaPipe** for detailed movement analysis.
@@ -11,7 +11,7 @@ SmartVision Pro is an advanced real-time computer vision system designed to dete
 - **Flexible Input**: Automatically processes video files from a folder or falls back to live webcam feed.
 - **Logging**: Records high-priority threats to `logs/threat_alerts.log` and the console.
 
-## 🛠️ Installation
+##  Installation
 
 1.  **Clone the repository**:
     ```bash
@@ -31,7 +31,7 @@ SmartVision Pro is an advanced real-time computer vision system designed to dete
     - `models/yolov11s_fine_tune.pt`
     - `models/lstm_action_recognition_pro.pth`
 
-## 💻 Usage
+##  Usage
 
 ### 1. Run the Pipeline
 The main inference script is located in `pipeline/run_inference.py`.
@@ -50,7 +50,7 @@ The system automatically determines the input source:
 - **Video Files**: Processed videos are saved to `results/`.
 - **Logs**: Threat alerts (Violence/Shooting) are logged to `logs/threat_alerts.log`.
 
-## 🧠 Project Structure
+##  Project Structure
 
 ```
 smart-vision/
@@ -73,5 +73,5 @@ smart-vision/
 └── results/                # Output videos
 ```
 
-## ⚠️ Disclaimer
+##  Disclaimer
 This software is for educational and research purposes. Performance depends on model training and environmental conditions.
