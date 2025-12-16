@@ -1,8 +1,4 @@
 
-# Logs - ignore locally
-logs/
-!logs/.gitkeep
-
 # Environment files for security
 .env
 *.env
@@ -31,3 +27,7 @@ env/
 # Misc temporary files
 *.bak
 *.tmp
+
+data/
+
+*.mp4
