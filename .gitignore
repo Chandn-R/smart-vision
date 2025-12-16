@@ -31,3 +31,5 @@ env/
 # Misc temporary files
 *.bak
 *.tmp
+
+data/
