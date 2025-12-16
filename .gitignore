@@ -1,8 +1,4 @@
 
-# Logs - ignore locally
-logs/
-!logs/.gitkeep
-
 # Environment files for security
 .env
 *.env
@@ -33,3 +29,5 @@ env/
 *.tmp
 
 data/
+
+*.mp4
