@@ -24,7 +24,6 @@ SmartVision Pro is an advanced real-time computer vision system designed to dete
     ```bash
     pip install -r requirements.txt
     ```
-    *(Note: Ensure you have `torch`, `opencv-python`, `ultralytics`, `mediapipe` installed).*
 
 3.  **Models**:
     Place your trained models in the `models/` directory:

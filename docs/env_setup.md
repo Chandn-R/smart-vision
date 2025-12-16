@@ -4,7 +4,7 @@ This guide will walk you step-by-step through:
 
 * Installing Python 3.11
 * Creating a virtual environment
-* Installing dependencies from `config/requirements.txt`
+* Installing dependencies from `environment/requirements.txt`
 * Running the ML pipeline via `pipeline/run_inference.py`
 
 ---
