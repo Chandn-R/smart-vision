@@ -31,3 +31,5 @@ env/
 data/
 
 *.mp4
+
+logs

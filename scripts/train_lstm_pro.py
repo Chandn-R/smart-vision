@@ -9,7 +9,7 @@ import random
 import copy
 
 # --- CONFIGURATION ---
-DATA_PATH = os.path.expanduser("../data/processed/lstm_data")
+DATA_PATH = os.path.expanduser("../data/processed/new_L_lstm_data")
 MODEL_SAVE_PATH = "../models/lstm_action_recognition_pro.pth" # New filename
 EPOCHS = 80              # More epochs for the scheduler to work
 BATCH_SIZE = 64          # Bigger batch for stable gradients
