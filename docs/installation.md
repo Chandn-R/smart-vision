@@ -12,29 +12,22 @@ This method ensures cross-platform compatibility (Linux, Mac, Windows) and handl
     - `models/yolo_fine_tune_v2.pt`
     - `models/lstm_action_recognition_pro_v2.pth`
 
-### Quick Start
-1. **Build and Run**:
-   ```bash
-   docker-compose up --build
-   ```
-   *Note: This defaults to CPU mode. For GPU support, see [GPU Configuration](#gpu-configuration).*
+### Quick Start (CPU / Default)
+Works on all platforms (Mac, Windows, Linux).
+```bash
+docker-compose up --build
+```
 
-2. **Watch Logs**:
-   ```bash
-   docker-compose logs -f
-   ```
+### Quick Start (Enabled GPU) - Windows/Linux Only
+For machines with NVIDIA GPUs:
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+```
+*Note: Docker on macOS cannot access the GPU directly. To use the GPU (MPS) on Mac, please use the **Local Installation** method.*
 
-3. **Stop**:
-   ```bash
-   docker-compose down
-   ```
-
-### GPU Configuration
-By default, the `docker-compose.yml` is configured for specific CPU execution to ensure maximum compatibility. 
-To enable **NVIDIA GPU** support:
-1. Open `docker-compose.yml`.
-2. Uncomment the `deploy` section under `resources`.
-3. Restart the container.
+### GPU Configuration Details
+- **Windows/Linux**: Use the `docker-compose.gpu.yml` override to pass the NVIDIA GPU to the container.
+- **Mac (Apple Silicon)**: Docker runs in a Linux VM that cannot see the Apple Neural Engine. For GPU acceleration, run the pipeline **locally** (`python pipeline/run_inference.py`).
 
 ---
 

@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  smart-vision:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
