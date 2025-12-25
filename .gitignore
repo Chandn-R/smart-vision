@@ -35,5 +35,3 @@ data/
 # Project Artifacts
 logs/
 results/
-models/*.pt
-models/*.pth
