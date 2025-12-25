@@ -22,6 +22,4 @@
 *.mp3 filter=lfs diff=lfs merge=lfs -text
 *.flac filter=lfs diff=lfs merge=lfs -text
 *.pkl filter=lfs diff=lfs merge=lfs -text
-data/** filter=lfs diff=lfs merge=lfs -text
-models/** filter=lfs diff=lfs merge=lfs -text
-results/** filter=lfs diff=lfs merge=lfs -text
+

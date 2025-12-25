@@ -28,10 +28,11 @@ env/
 *.bak
 *.tmp
 
+# Project Data
 data/
-
 *.mp4
 
 # Project Artifacts
 logs/
 results/
+!results/*.mp4
