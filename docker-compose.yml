@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  smart-vision:
+    build: .
+    image: smart-vision:latest
+    container_name: smart-vision-pro
+    volumes:
+      - ./data/input_videos:/app/data/input_videos
+      - ./results:/app/results
+      - ./logs:/app/logs
+      - ./models:/app/models
+    environment:
+      - YOLO_MODEL_PATH=/app/models/yolo_fine_tune_v2.pt
+      - LSTM_MODEL_PATH=/app/models/lstm_action_recognition_pro_v2.pth
+      - INPUT_VIDEO_DIR=/app/data/input_videos
+      - RESULTS_DIR=/app/results
+      - LOG_DIR=/app/logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    # For Apple Silicon / CPU only testing, comment out the deploy section above
+    # and use the default Platform setting if needed.
+    stdin_open: true # docker run -i
+    tty: true # docker run -t

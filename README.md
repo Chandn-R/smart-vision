@@ -11,7 +11,73 @@ SmartVision Pro is an advanced real-time computer vision system designed to dete
 - **Flexible Input**: Automatically processes video files from a folder or falls back to live webcam feed.
 - **Logging**: Records high-priority threats to `logs/threat_alerts.log` and the console.
 
-##  Installation
+##  Docker Deployment (Recommended)
+
+### Prerequisites
+- Docker Desktop or Docker Engine installed.
+- Trained models in `models/` directory.
+
+### Quick Start
+1. **Build and Run**:
+   ```bash
+   docker-compose up --build
+   ```
+   *Note: This starts the service in detached mode by default (headless).*
+
+2. **Watch Logs**:
+   ```bash
+   docker-compose logs -f
+   ```
+
+3. **Stop**:
+   ```bash
+   docker-compose down
+   ```
+
+### Testing with Custom Videos
+1. Place test videos to `data/input_videos/`.
+   - Examples: `test_fight.mp4`, `cam_1_shooting.avi`
+2. Run the container:
+   ```bash
+   docker-compose up
+   ```
+3. The system will process each video and save the output to `results/`.
+4. Check `logs/threat_alerts.log` for detected threats.
+
+---
+
+##  Ideal Results & Validation
+
+### 1. Video Output (`results/`)
+- **Bounding Boxes**:
+  - **Green**: Safe / Person
+  - **Red**: Threat (Gun, Knife, Shooter)
+  - **Orange**: Warning (Fighting)
+- **Annotations**:
+  - Text above head: `Action: <Type> (<Probability>%)`
+  - Text below feet: `THREAT: <Level>` (e.g., CRITICAL: SHOOTER)
+
+### 2. Threat Logs (`logs/threat_alerts.log`)
+Expected log format for a positive detection:
+```text
+2024-12-25 14:30:05 - CRITICAL - THREAT DETECTED | Source: File: fight.mp4 | ID: 12 | Action: VIOLENCE (0.95) | Level: CRITICAL: KNIFE ATTACK
+```
+
+### 3. Hierarchical Threat Logic
+The system applies the following priority rules:
+| Threat Level | Condition |
+| :--- | :--- |
+| **CRITICAL** | Gun Detected + "Shooting" Action |
+| **CRITICAL** | Knife Detected + "Violence" Action |
+| **HIGH** | No Weapon + "Violence" Action |
+| **WARNING** | No Weapon + "Shooting" Stance |
+| **WARNING** | Weapon Detected + Normal Behavior |
+| **SAFE** | No Weapon + Normal Behavior |
+
+---
+
+##  Local Installation
+
 
 1.  **Clone the repository**:
     ```bash
