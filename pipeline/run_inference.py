@@ -82,10 +82,7 @@ def process_source(source_path, output_path, detector, lstm_model, device, inv_c
                     visible_weapons.append(cls_id)
                     color = get_color(cls_id)
                     cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                    label = f"THREAT: {class_name}"
-                    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                    cv2.rectangle(frame, (x1, y1 - 25), (x1 + tw, y1), color, -1)
-                    cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    # Removed text labels for weapons (boxes only)
                 
                 elif cls_id == PERSON_CLASS_ID:
                     detections_for_tracking.append(([x1, y1, x2, y2], conf, cls_id))
@@ -141,11 +138,7 @@ def process_source(source_path, output_path, detector, lstm_model, device, inv_c
                 
                 # Visualization
                 cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
-                info_text = f"ID:{track_id} {action_label}"
-                if action_prob > 0: info_text += f" ({action_prob:.0%})"
-                cv2.putText(frame, info_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 2)
-                if threat_level != "SAFE":
-                    cv2.putText(frame, threat_level, (x1, y2 + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, box_color, 2)
+                # Removed text annotations as per user request (logs only)
         
         if out_writer:
             out_writer.write(frame)
