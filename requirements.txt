@@ -1,0 +1,9 @@
+numpy>=1.21.0
+opencv-python-headless>=4.5.0
+torch>=2.0.0
+ultralytics>=8.0.0
+mediapipe>=0.10.0
+PyYAML>=6.0
+requests>=2.25.0
+scipy>=1.7.0
+tqdm

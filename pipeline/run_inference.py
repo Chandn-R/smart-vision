@@ -3,7 +3,9 @@ import os
 import cv2
 import numpy as np
 import torch
+import argparse
 from collections import deque
+
 
 # Add root to sys.path to ensure imports work if run from pipeline/ or root
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,7 +26,8 @@ from src.utils.logger import setup_logger
 # Initialize global logger
 logger = setup_logger()
 
-def process_source(source_path, output_path, detector, lstm_model, device, inv_class_map, threat_manager):
+def process_source(source_path, output_path, detector, lstm_model, device, inv_class_map, threat_manager, headless=False):
+
     """
     Handles inference for a single video source (file or webcam).
     """
@@ -147,15 +150,17 @@ def process_source(source_path, output_path, detector, lstm_model, device, inv_c
         if out_writer:
             out_writer.write(frame)
             
-        cv2.imshow("SmartVision Pro - Threat Detection", frame)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        if not headless:
+            cv2.imshow("SmartVision Pro - Threat Detection", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
 
     cap.release()
     if out_writer: out_writer.release()
     cv2.destroyAllWindows()
 
-def run_pipeline():
+def run_pipeline(headless=False):
+
     # --- INITIALIZE MODELS ---
     print(" Initializing SmartVision Pipeline...")
     
@@ -204,13 +209,18 @@ def run_pipeline():
             src_path = os.path.join(INPUT_VIDEO_DIR, video_file)
             out_path = os.path.join(RESULTS_DIR, f"output_{video_file}")
             
-            process_source(src_path, out_path, detector, lstm_model, device, inv_class_map, threat_manager)
+            process_source(src_path, out_path, detector, lstm_model, device, inv_class_map, threat_manager, headless=headless)
             
         print(" All videos processed.")
     else:
         print(" No videos found in input folder. Switching to LIVE WEBCAM.")
         live_out_path = os.path.join(RESULTS_DIR, "webcam_session.mp4")
-        process_source(WEBCAM_ID, live_out_path, detector, lstm_model, device, inv_class_map, threat_manager)
+        process_source(WEBCAM_ID, live_out_path, detector, lstm_model, device, inv_class_map, threat_manager, headless=headless)
 
 if __name__ == "__main__":
-    run_pipeline()
+    parser = argparse.ArgumentParser(description="SmartVision Pro Inference Pipeline")
+    parser.add_argument("--headless", action="store_true", help="Run in headless mode (no GUI)")
+    args = parser.parse_args()
+    
+    run_pipeline(headless=args.headless)
+```
