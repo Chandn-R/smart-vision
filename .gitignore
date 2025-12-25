@@ -31,3 +31,9 @@ env/
 data/
 
 *.mp4
+
+# Project Artifacts
+logs/
+results/
+models/*.pt
+models/*.pth
