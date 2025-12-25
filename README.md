@@ -27,8 +27,8 @@ SmartVision Pro is an advanced real-time computer vision system designed to dete
 
 3.  **Models**:
     Place your trained models in the `models/` directory:
-    - `models/yolov11s_fine_tune.pt`
-    - `models/lstm_action_recognition_pro.pth`
+    - `models/yolo_fine_tune_v2.pt`
+    - `models/lstm_action_recognition_pro_v2.pth`
 
 ##  Usage
 
@@ -57,19 +57,21 @@ smart-vision/
 │   ├── input_videos/       # Place input videos here
 │   └── processed/          # Intermediate data
 ├── logs/
-│   └── threat_alerts.log   # Threat detection logs
+│   └── threat_alerts.log   # Threat detection logs (30s cooldown per threat type)
 ├── models/
-│   ├── yolov11s_fine_tune.pt
-│   └── lstm_action_recognition_pro.pth
+│   ├── yolo_fine_tune_v2.pt              # Updated YOLOv11 Model
+│   └── lstm_action_recognition_pro_v2.pth # Updated LSTM Action Model
 ├── pipeline/
-│   └── run_inference.py    # Main Inference Pipeline
-├── scripts/
-│   ├── create_lstm_data.py # Data generation script
-│   └── train_lstm.py       # LSTM training script
+│   └── run_inference.py    # Main Inference Pipeline (Refactored)
 ├── src/
-│   ├── modeling/           # Core Logic (Detectors, Trackers)
+│   ├── config.py           # Central Configuration (Paths, Thresholds, Cooldowns)
+│   ├── core/               # Threat Logic & Managers
+│   ├── modeling/           # Classifiers (LSTM), Detectors (YOLO), Trackers, Pose
+│   └── utils/              # Shared Utilities (Logger)
+├── scripts/
+│   ├── yolo11_fine_tune_v2.py # V2 Model Training Script
 │   └── ...
-└── results/                # Output videos
+└── results/                # Output videos (LFS tracked)
 ```
 
 ##  Disclaimer
