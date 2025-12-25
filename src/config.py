@@ -33,7 +33,10 @@ PERSON_CLASS_ID = 5
 WEAPON_CLASS_IDS = [2, 4] # Gun, Knife
 GUN_CLASS_IDS = [2]
 KNIFE_CLASS_ID = 4
-
+ATM_CLASS_ID = 0
+BACKPACK_CLASS_ID = 1
+HANDBAG_CLASS_ID = 3
 
 def get_color(class_id):
     return CLASS_COLORS.get(class_id, (255, 255, 255))
+
