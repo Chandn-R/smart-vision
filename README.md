@@ -16,6 +16,7 @@ SmartVision Pro is an advanced real-time computer vision system designed to dete
 ### Prerequisites
 - Docker Desktop or Docker Engine installed.
 - Trained models in `models/` directory.
+- **GPU Support**: The `docker-compose.yml` is set to CPU-mode by default for compatibility with Mac/Windows. To enable NVIDIA GPU support, uncomment the `deploy` section in the file.
 
 ### Quick Start
 1. **Build and Run**:

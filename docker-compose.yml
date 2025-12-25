@@ -16,13 +16,13 @@ services:
       - INPUT_VIDEO_DIR=/app/data/input_videos
       - RESULTS_DIR=/app/results
       - LOG_DIR=/app/logs
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [ gpu ]
     # For Apple Silicon / CPU only testing, comment out the deploy section above
     # and use the default Platform setting if needed.
     stdin_open: true # docker run -i
