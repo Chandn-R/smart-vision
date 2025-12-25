@@ -32,6 +32,8 @@ CLASS_COLORS = {
 PERSON_CLASS_ID = 0
 WEAPON_CLASS_IDS = [1, 2, 3, 4, 5]
 GUN_CLASS_IDS = [1, 2]  # Specific IDs for firearms
+KNIFE_CLASS_ID = 3
+
 
 def get_color(class_id):
     return CLASS_COLORS.get(class_id, (255, 255, 255))

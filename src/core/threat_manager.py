@@ -1,6 +1,6 @@
 import time
 from src.config import (
-    LOGGABLE_THREATS, LOG_COOLDOWN, GUN_CLASS_IDS
+    LOGGABLE_THREATS, LOG_COOLDOWN, GUN_CLASS_IDS, KNIFE_CLASS_ID
 )
 from src.utils.logger import setup_logger
 
@@ -17,21 +17,44 @@ class ThreatManager:
         threat_level = "SAFE"
         box_color = (0, 255, 0)  # Green
 
+        # Threat checks
         has_gun = any(w in GUN_CLASS_IDS for w in visible_weapons)
+        has_knife = KNIFE_CLASS_ID in visible_weapons
+        has_weapon = len(visible_weapons) > 0
         
-        if action_label == "shooting" and has_gun:
+        # 1. CRITICAL: Firearm Detected + "Shooting" Action
+        if has_gun and action_label == "shooting":
             threat_level = "CRITICAL: SHOOTER"
             box_color = (0, 0, 255)  # Red
-        elif action_label == "violence" and (3 in visible_weapons): # 3 is Knife
+            
+        # 2. CRITICAL: Knife Detected + "Violence" Action
+        elif has_knife and action_label == "violence":
             threat_level = "CRITICAL: KNIFE ATTACK"
             box_color = (0, 0, 255)  # Red
-        elif action_label == "violence":
+            
+        # 3. HIGH: No Weapon + "Violence" Action
+        elif (not has_weapon) and action_label == "violence":
             threat_level = "HIGH: FIGHTING"
             box_color = (0, 165, 255)  # Orange
-        elif action_label == "shooting":
+
+        # 4. WARNING: No Weapon + "Shooting" Stance
+        elif (not has_weapon) and action_label == "shooting":
             threat_level = "WARN: SUSPICIOUS STANCE"
             box_color = (0, 255, 255)  # Yellow
             
+        # 5. WARNING: Weapon Detected + Passive/Normal (Not Violence/Shooting)
+        # Note: If we have a weapon + Violence/Shooting but missed critical rules (e.g. Gun+Violence), it falls through here or below.
+        elif has_weapon and action_label not in ["violence", "shooting"]:
+            threat_level = "WARN: WEAPON DETECTED"
+            box_color = (0, 255, 255)  # Yellow
+
+        # Edge Case: Weapon + Violence (that isn't Knife) or Weapon + Shooting (that isn't Gun)
+        # Example: Blunt Weapon + Violence -> Should matches HIGH or CRITICAL.
+        # Example: Gun + Violence -> Should likely be HIGH+.
+        elif action_label == "violence":
+             threat_level = "HIGH: FIGHTING (ARMED)"
+             box_color = (0, 165, 255)
+
         return threat_level, box_color
 
     def log_threat(self, track_id, source_name, action_label, action_prob, threat_level):
