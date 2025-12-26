@@ -22,16 +22,16 @@ def main():
         gpu_name = torch.cuda.get_device_name(0)
         print(f" SUCCESS: Found {gpu_count} GPU(s).")
         print(f"   Using: {gpu_name}")
-        device = 0  # Use GPU 0
+        device = 0
     else:
         print(" WARNING: No GPU detected! Training will be painfully slow.")
 
     # --- 2. DOWNLOAD DATASET ---
     print("\n Downloading Dataset from Roboflow...")
 
-    rf = Roboflow(api_key=api_key)
-    project = rf.workspace("smartvision-dlaub").project("raw_v2")
-    version = project.version(1)
+    rf = Roboflow(api_key="API_KEY")
+    project = rf.workspace("v2-nfgdu").project("the_final")
+    version = project.version(4)
     dataset = version.download("yolov11")
 
     data_yaml_path = os.path.join(dataset.location, "data.yaml")
@@ -44,7 +44,7 @@ def main():
     # --- 4. START TRAINING ---
     print("\n Starting Training (Production Config)...")
     print(
-        "   Note: Logs are automatically saved to 'runs/detect/production_run_v1/results.csv'"
+        "   Note: Logs are automatically saved to 'runs/detect/production_run_v2/results.csv'"
     )
     print("=" * 60)
 
@@ -53,26 +53,34 @@ def main():
     # Training Loop
     results = model.train(
         data=data_yaml_path,
-        epochs=80,
+        # --- DURATION ---
+        epochs=100,  # Increased to 100 for the larger dataset
+        patience=0,  # Early stopping if no improvement (saves time)
+        # --- BATCHING ---
         imgsz=640,
-        batch=64,
+        batch=64,  # 32 is safer for SGD stability. Use 64 if you have a 4090/A100.
         device=device,
-        # Performance Settings
-        cache="ram",
         workers=12,
-        # Project Organization
-        project="SmartVision_Final",
-        name="production_run_v1",
-        # --- AUGMENTATIONS ---
-        mosaic=0.8,
-        mixup=0.1,
-        hsv_h=0.015,
-        hsv_s=0.7,
-        hsv_v=0.4,
+        # --- OPTIMIZATION (The Generalization Fix) ---
+        optimizer="SGD",  # SGD generalizes better than Adam for detected 'Persons'
+        lr0=0.01,  # Standard initial learning rate
+        cos_lr=True,  # Cosine decay for smooth convergence
+        # --- AUGMENTATIONS (The Webcam Fix) ---
+        mosaic=1.0,  # Maximize context learning
+        mixup=0.1,  # Slight blending to handle motion blur
+        hsv_h=0.015,  # Color hue
+        hsv_s=0.7,  # High Saturation (Fixes webcam lighting issues)
+        hsv_v=0.4,  # High Brightness (Fixes dark room issues)
         degrees=10.0,
         translate=0.1,
         scale=0.5,
         fliplr=0.5,
+        # --- FINE TUNING ---
+        close_mosaic=10,  # Turn off Mosaic for the last 10 epochs for precision
+        # --- OUTPUT ---
+        project="SmartVision_Final",
+        name="production_v3_balanced_SGD",
+        cache=False,
     )
 
     # --- 5. TIME CALCULATION ---
