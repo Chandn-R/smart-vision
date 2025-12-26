@@ -5,7 +5,7 @@ import sys
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # --- PATHS ---
-YOLO_MODEL_PATH = os.path.join(ROOT_DIR, "models", "yolo_fine_tune_v2.pt")
+YOLO_MODEL_PATH = os.path.join(ROOT_DIR, "models", "yolo11s_fine_tune_v3.pt")
 LSTM_MODEL_PATH = os.path.join(ROOT_DIR, "models", "lstm_action_recognition_pro_v2.pth")
 INPUT_VIDEO_DIR = os.path.join(ROOT_DIR, "data", "input_videos")
 RESULTS_DIR = os.path.join(ROOT_DIR, "results")
