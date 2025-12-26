@@ -9,3 +9,7 @@ pillow
 pyyaml
 sympy
 networkx
+ultralytics
+supervision
+# roboflow
+# fiftyone
