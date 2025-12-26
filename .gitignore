@@ -34,5 +34,5 @@ data/
 
 # Project Artifacts
 logs/
-results/
-!results/*.mp4
+
+results/*.mp4
