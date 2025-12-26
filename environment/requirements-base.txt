@@ -1,0 +1,11 @@
+numpy>=1.26,<2.0
+pandas
+scipy
+scikit-learn
+matplotlib
+tqdm
+requests
+pillow
+pyyaml
+sympy
+networkx

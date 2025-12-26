@@ -1,0 +1,10 @@
+-r requirements-base.txt
+appnope
+polars
+sounddevice
+torch
+torchvision
+jax
+jaxlib
+mediapipe
+opencv-python

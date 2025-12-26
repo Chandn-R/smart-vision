@@ -1,0 +1,8 @@
+-r requirements-base.txt
+polars
+torch
+torchvision
+jax
+jaxlib
+mediapipe
+opencv-python
