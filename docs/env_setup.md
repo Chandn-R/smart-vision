@@ -56,12 +56,12 @@ You should now see `(env)` before your terminal prompt.
 
 ---
 
-## 3. **Install Requirements from config/requirements.txt**
+## 3. **Install Requirements from environment/requirements.txt**
 
 Run the following command from the root of your project:
 
 ```bash
-pip install -r config/requirements.txt
+pip install -r environment/requirements.txt
 ```
 
 This will install all required packages for your ML pipeline.
