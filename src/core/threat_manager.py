@@ -1,7 +1,8 @@
 import time
 from src.config import (
-    LOGGABLE_THREATS, LOG_COOLDOWN, GUN_CLASS_IDS
+    LOGGABLE_THREATS, LOG_COOLDOWN, GUN_CLASS_IDS, KNIFE_CLASS_ID
 )
+
 from src.utils.logger import setup_logger
 
 class ThreatManager:
@@ -22,7 +23,8 @@ class ThreatManager:
         if action_label == "shooting" and has_gun:
             threat_level = "CRITICAL: SHOOTER"
             box_color = (0, 0, 255)  # Red
-        elif action_label == "violence" and (3 in visible_weapons): # 3 is Knife
+        elif action_label == "violence" and (KNIFE_CLASS_ID in visible_weapons):
+
             threat_level = "CRITICAL: KNIFE ATTACK"
             box_color = (0, 0, 255)  # Red
         elif action_label == "violence":

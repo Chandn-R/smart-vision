@@ -22,16 +22,18 @@ LOG_COOLDOWN = 60.0  # Seconds between logs for the same threat type
 
 # --- CLASS DEFINITIONS ---
 CLASS_COLORS = {
-    0: (0, 255, 0),    # Person: Green
-    1: (0, 0, 255),    # Gun: Red
-    2: (0, 0, 255),    # Long Gun: Red
-    3: (0, 0, 255),    # Knife: Red
-    4: (0, 165, 255),  # Blunt Weapon: Orange
-    5: (0, 165, 255),  # Burglary Tool: Orange
+    0: (128, 128, 128),  # ATM: Gray (Non-threat)
+    1: (128, 128, 128),  # Backpack: Gray (Non-threat)
+    2: (0, 0, 255),    # Gun: Red
+    3: (128, 128, 128),  # Handbag: Gray (Non-threat)
+    4: (0, 0, 255),    # Knife: Red
+    5: (0, 255, 0),    # Person: Green
 }
-PERSON_CLASS_ID = 0
-WEAPON_CLASS_IDS = [1, 2, 3, 4, 5]
-GUN_CLASS_IDS = [1, 2]  # Specific IDs for firearms
+PERSON_CLASS_ID = 5
+WEAPON_CLASS_IDS = [2, 4] # Gun, Knife
+GUN_CLASS_IDS = [2]  # Specific IDs for firearms
+KNIFE_CLASS_ID = 4
+
 
 def get_color(class_id):
     return CLASS_COLORS.get(class_id, (255, 255, 255))

@@ -67,7 +67,7 @@ def run_streamlit_inference(source_path: str):
     """
     runtime = init_models_and_helpers()
     if runtime is None:
-        st.error("❌ Failed to load models. Check paths and restart.")
+        st.error(" Failed to load models. Check paths and restart.")
         return
 
     detector = runtime["detector"]
@@ -103,7 +103,7 @@ def run_streamlit_inference(source_path: str):
         st.error(f"Error opening video source: {source_path}")
         return
 
-    stop_button = st.sidebar.button("🟥 Stop Processing")
+    stop_button = st.sidebar.button(" Stop Processing")
     detection_log = []
 
     prev_time = time.time()
@@ -123,7 +123,7 @@ def run_streamlit_inference(source_path: str):
         fps = 1.0 / max(curr_time - prev_time, 1e-6)
         prev_time = curr_time
         fps_text.write(f"{int(fps)}")
-        status_text.write("🟢 Running")
+        status_text.write(" Running")
 
         # Delegate heavy work
         processed_frame, threat_messages = process_frame(
@@ -147,7 +147,7 @@ def run_streamlit_inference(source_path: str):
 
         # Show frame
         frame_rgb = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
-        st_frame.image(frame_rgb, channels="RGB", use_container_width=True)
+        st_frame.image(frame_rgb, channels="RGB", width="stretch")
 
     cap.release()
 
@@ -157,7 +157,7 @@ def main():
 
     runtime = init_models_and_helpers()
     if runtime is None or runtime["detector"] is None:
-        st.error("❌ YOLO/LSTM models not found. Check configuration.")
+        st.error(" YOLO/LSTM models not found. Check configuration.")
         return
 
     st.sidebar.success("Models Loaded!")
