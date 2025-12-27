@@ -12,26 +12,40 @@ class ThreatManager:
 
     def determine_threat(self, action_label, visible_weapons):
         """
-        Determines the threat level and display color based on action and visible weapons.
-        Returns: (threat_level_string, color_rgb)
+        Determines the threat level based on the following matrix:
+        - Critical: (Shooting/Violence) + (Gun/Knife)
+        - High:     (Normal/Scanning)   + (Gun/Knife)
+        - Warning:  (Shooting/Violence) + (No Weapon)
+        - Safe:     Otherwise
         """
         threat_level = "SAFE"
         box_color = (0, 255, 0)  # Green
 
         has_gun = any(w in GUN_CLASS_IDS for w in visible_weapons)
-        
-        if action_label == "shooting" and has_gun:
-            threat_level = "CRITICAL: SHOOTER"
-            box_color = (0, 0, 255)  # Red
-        elif action_label == "violence" and (KNIFE_CLASS_ID in visible_weapons):
+        has_knife = KNIFE_CLASS_ID in visible_weapons
+        has_weapon = has_gun or has_knife
 
-            threat_level = "CRITICAL: KNIFE ATTACK"
+        is_violent_action = action_label in ["shooting", "violence"]
+
+        if is_violent_action and has_weapon:
+            # CRITICAL
+            if has_gun:
+                threat_level = "CRITICAL: SHOOTER"
+            else:
+                threat_level = "CRITICAL: KNIFE ATTACK"
             box_color = (0, 0, 255)  # Red
-        elif action_label == "violence":
-            threat_level = "HIGH: FIGHTING"
+
+        elif has_weapon:
+            # HIGH (Weapon detected but no violent action yet)
+            threat_level = "HIGH: WEAPON DETECTED"
             box_color = (0, 165, 255)  # Orange
-        elif action_label == "shooting":
-            threat_level = "WARN: SUSPICIOUS STANCE"
+
+        elif is_violent_action:
+            # WARNING (Violent action but no weapon visible)
+            if action_label == "shooting":
+                threat_level = "WARN: SUSPICIOUS STANCE"
+            else:
+                threat_level = "WARN: FIGHTING"
             box_color = (0, 255, 255)  # Yellow
             
         return threat_level, box_color

@@ -14,11 +14,17 @@ LOG_DIR = os.path.join(ROOT_DIR, "logs")
 # --- PARAMETERS ---
 WEBCAM_ID = 0
 CONFIDENCE_THRESHOLD = 0.45
+ACTION_CONFIDENCE_THRESHOLD = 0.70 # Minimum confidence for LSTM action recognition
 SEQUENCE_LENGTH = 30  # Must match training
+
+DRAW_PERSON_BOXES = True # Draw bounding boxes for persons
+DRAW_LABELS = True # Draw text labels (ID, Class Name)
+
+
 
 # --- THREAT LOGIC ---
 LOGGABLE_THREATS = ["violence", "shooting"]
-LOG_COOLDOWN = 60.0  # Seconds between logs for the same threat type
+LOG_COOLDOWN = 10.0  # Seconds between logs for the same threat type
 
 # --- CLASS DEFINITIONS ---
 CLASS_COLORS = {

@@ -20,11 +20,18 @@ from src.config import (
     RESULTS_DIR,
     WEBCAM_ID,
     CONFIDENCE_THRESHOLD,
+    ACTION_CONFIDENCE_THRESHOLD,
     SEQUENCE_LENGTH,
+
     PERSON_CLASS_ID,
     WEAPON_CLASS_IDS,
+    WEAPON_CLASS_IDS,
     get_color,
+    DRAW_PERSON_BOXES,
+    DRAW_LABELS,
 )
+
+
 from src.modeling.detectors.yolo_detector import YOLODetector
 from src.modeling.trackers.byte_tracker import ByteTracker
 from src.modeling.pose_estimators.mediapipe import MediaPipeEstimator
@@ -128,18 +135,20 @@ def draw_weapon_boxes(detector: YOLODetector, frame: np.ndarray, results) -> Lis
                 color = get_color(cls_id)
 
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                label = f"THREAT: {class_name}"
-                (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                cv2.rectangle(frame, (x1, y1 - 25), (x1 + tw, y1), color, -1)
-                cv2.putText(
-                    frame,
-                    label,
-                    (x1, y1 - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (255, 255, 255),
-                    2,
-                )
+                
+                if DRAW_LABELS:
+                    label = f"{class_name}"
+                    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                    cv2.rectangle(frame, (x1, y1 - 25), (x1 + tw, y1), color, -1)
+                    cv2.putText(
+                        frame,
+                        label,
+                        (x1, y1 - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 255, 255),
+                        2,
+                    )
 
     return visible_weapons
 
@@ -183,7 +192,7 @@ def update_person_history(
         if person_crop.size > 0:
             landmarks_list, landmarks_obj = pose_estimator.predict(person_crop)
             if landmarks_obj:
-                pose_estimator.visualize(person_crop, landmarks_obj)
+                # pose_estimator.visualize(person_crop, landmarks_obj)
                 frame[y1_c:y2_c, x1_c:x2_c] = person_crop
 
         if landmarks_list:
@@ -205,7 +214,8 @@ def update_person_history(
                 probs = torch.softmax(output, dim=1)
                 top_p, top_class = torch.topk(probs, 1)
 
-                if top_p.item() > 0.6:
+                if top_p.item() > ACTION_CONFIDENCE_THRESHOLD:
+
                     action_label = inv_class_map[top_class.item()]
                     action_prob = top_p.item()
 
@@ -217,37 +227,40 @@ def update_person_history(
             track_id, "Stream", action_label, action_prob, threat_level
         )
 
-        # Draw person box and labels
-        cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
-        info_text = f"ID:{track_id} {action_label}"
-        if action_prob > 0:
-            info_text += f" ({action_prob:.0%})"
-
-        (tw, th), _ = cv2.getTextSize(info_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-        cv2.rectangle(frame, (x1, y1 - 20), (x1 + tw, y1), box_color, -1)
-        cv2.putText(
-            frame,
-            info_text,
-            (x1, y1 - 5),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (255, 255, 255),
-            1,
-        )
+        # Draw person box and labels (if enabled)
+        if DRAW_PERSON_BOXES:
+            person_color = (0, 255, 0) # Green
+            cv2.rectangle(frame, (x1, y1), (x2, y2), person_color, 2)
+            
+            if DRAW_LABELS:
+                info_text = f"ID:{track_id}"
+                (tw, th), _ = cv2.getTextSize(info_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+                cv2.rectangle(frame, (x1, y1 - 20), (x1 + tw, y1), person_color, -1)
+                cv2.putText(
+                    frame,
+                    info_text,
+                    (x1, y1 - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 255, 255),
+                    1,
+                )
 
         # Add visual threat label if needed
         if threat_level != "SAFE":
             msg = f"⚠️ ID {track_id}: {threat_level} ({action_label})"
             threat_messages.append(msg)
-            cv2.putText(
-                frame,
-                threat_level,
-                (x1, y2 + 25),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                box_color,
-                2,
-            )
+            
+            if DRAW_LABELS:
+                cv2.putText(
+                    frame,
+                    threat_level,
+                    (x1, y2 + 25),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    box_color,
+                    2,
+                )
 
     return threat_messages
 
@@ -289,18 +302,20 @@ def process_frame(
                 visible_weapons.append(cls_id)
 
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                label = f"THREAT: {class_name}"
-                (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                cv2.rectangle(frame, (x1, y1 - 25), (x1 + tw, y1), color, -1)
-                cv2.putText(
-                    frame,
-                    label,
-                    (x1, y1 - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (255, 255, 255),
-                    2,
-                )
+                
+                if DRAW_LABELS:
+                    label = f"{class_name}"
+                    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                    cv2.rectangle(frame, (x1, y1 - 25), (x1 + tw, y1), color, -1)
+                    cv2.putText(
+                        frame,
+                        label,
+                        (x1, y1 - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 255, 255),
+                        2,
+                    )
 
     # 3. Prepare detections for tracking
     detections_for_tracking, _ = parse_detections(detector, results)
