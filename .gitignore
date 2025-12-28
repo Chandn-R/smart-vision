@@ -36,3 +36,4 @@ data/
 logs/
 
 *.db
+static/

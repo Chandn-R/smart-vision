@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import tempfile
+import base64
 
 import cv2
 import numpy as np
@@ -145,9 +146,13 @@ def run_streamlit_inference(source_path: str):
         if detection_log:
             threat_log_container.text("\n".join(detection_log[:5]))
 
-        # Show frame
-        frame_rgb = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
-        st_frame.image(frame_rgb, channels="RGB", width="stretch")
+        # Show frame (Base64 encoded to prevent MediaFileStorageError)
+        _, buffer = cv2.imencode('.jpg', processed_frame)
+        monitor_b64 = base64.b64encode(buffer).decode()
+        st_frame.markdown(
+            f'<img src="data:image/jpeg;base64,{monitor_b64}" style="width:100%">',
+            unsafe_allow_html=True
+        )
 
     cap.release()
 

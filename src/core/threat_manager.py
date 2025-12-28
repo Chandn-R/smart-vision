@@ -80,27 +80,28 @@ class ThreatManager:
         """
         current_time = time.time()
         
-        # Debounce logic (prevent spamming same threat)
-        last_log = self.threat_logs.get(track_id)
-        if last_log:
-            last_time, last_label = last_log
-            if last_label == threat_level and (current_time - last_time < self.log_cooldown):
-                return
+        if threat_level == "SAFE":
+            return
 
+        # Global Debounce logic (prevent spamming same threat TYPE regardless of ID)
+        # Check if we already logged this specific threat level recently
+        last_time = self.threat_logs.get(threat_level, 0)
+        if current_time - last_time < self.log_cooldown:
+            return
 
         # Log to Console/File
-        if threat_level != "SAFE":
-            if "CRITICAL" in threat_level:
-                logging.critical(f"THREAT DETECTED | Source: {source_name} | ID: {track_id} | Action: {action_label} ({action_prob:.2f}) | Level: {threat_level}")
-            elif "WARNING" in threat_level: # Changed from WARN to WARNING to match new labels
-                 logging.warning(f"THREAT DETECTED | Source: {source_name} | ID: {track_id} | Action: {action_label} ({action_prob:.2f}) | Level: {threat_level}")
-            else:
-                 logging.error(f"THREAT DETECTED | Source: {source_name} | ID: {track_id} | Action: {action_label} ({action_prob:.2f}) | Level: {threat_level}")
+        if "CRITICAL" in threat_level:
+            logging.critical(f"THREAT DETECTED | Source: {source_name} | ID: {track_id} | Action: {action_label} ({action_prob:.2f}) | Level: {threat_level}")
+        elif "WARNING" in threat_level:
+             logging.warning(f"THREAT DETECTED | Source: {source_name} | ID: {track_id} | Action: {action_label} ({action_prob:.2f}) | Level: {threat_level}")
+        else:
+             logging.error(f"THREAT DETECTED | Source: {source_name} | ID: {track_id} | Action: {action_label} ({action_prob:.2f}) | Level: {threat_level}")
 
-            self.threat_logs[track_id] = (current_time, threat_level)
-            if self.csv_writer: # Only write if csv_writer was successfully initialized
-                self.csv_writer.writerow([datetime.now(), source_name, track_id, action_label, f"{action_prob:.2f}", threat_level])
-                self.log_file.flush()
+        # Update global cooldown for this threat level
+        self.threat_logs[threat_level] = current_time
+        if self.csv_writer: # Only write if csv_writer was successfully initialized
+            self.csv_writer.writerow([datetime.now(), source_name, track_id, action_label, f"{action_prob:.2f}", threat_level])
+            self.log_file.flush()
 
         # --- SEND TO SERVER ---
         from src.config import SERVER_URL
