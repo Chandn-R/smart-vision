@@ -205,7 +205,7 @@ def update_person_history(
                 person_history[track_id].append([0.0] * 132)
 
         # LSTM action recognition
-        action_label = "Scanning..."
+        action_label = "normal"
         action_prob = 0.0
 
         if len(person_history[track_id]) == SEQUENCE_LENGTH:
