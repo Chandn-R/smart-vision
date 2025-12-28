@@ -39,6 +39,15 @@ PERSON_CLASS_ID = 5
 WEAPON_CLASS_IDS = [2, 4] # Gun, Knife
 GUN_CLASS_IDS = [2]  # Specific IDs for firearms
 KNIFE_CLASS_ID = 4
+ATM_CLASS_ID = 0
+BACKPACK_CLASS_ID = 1
+HANDBAG_CLASS_ID = 3
+
+CONTEXT_CLASS_IDS = [0, 1, 3] # ATM, Backpack, Handbag
+
+# --- TIME THRESHOLDS ---
+ATM_LOITERING_THRESHOLD = 60.0  # Seconds
+UNATTENDED_BAG_THRESHOLD = 60.0 # Seconds
 
 
 def get_color(class_id):
