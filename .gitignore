@@ -35,4 +35,4 @@ data/
 # Project Artifacts
 logs/
 
-results/*.mp4
+results/*.mp4incidents.db
