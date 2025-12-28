@@ -10,43 +10,60 @@ class ThreatManager:
         self.logger = setup_logger()
         self.last_log_time = {}  # { action_label: timestamp }
 
-    def determine_threat(self, action_label, visible_weapons):
+    def determine_threat(self, action_label, visible_objects, duration=0.0, is_unattended_bag=False):
         """
         Determines the threat level based on the following matrix:
-        - Critical: (Shooting/Violence) + (Gun/Knife)
-        - High:     (Normal/Scanning)   + (Gun/Knife)
-        - Warning:  (Shooting/Violence) + (No Weapon)
+        - Critical: (Shooting/Violence) + (Gun/Knife) OR (Shooting/Violence) + ATM
+        - High:     (Any Action) + (Gun/Knife)
+        - Warning:  (Shooting/Violence) + No Weapon
+        - Warning:  (Normal) + ATM + Duration > LOITERING_THRESHOLD (Loitering)
+        - Warning:  Unattended Baggage
         - Safe:     Otherwise
         """
         threat_level = "SAFE"
         box_color = (0, 255, 0)  # Green
 
-        has_gun = any(w in GUN_CLASS_IDS for w in visible_weapons)
-        has_knife = KNIFE_CLASS_ID in visible_weapons
+        from src.config import ATM_CLASS_ID, GUN_CLASS_IDS, KNIFE_CLASS_ID, ATM_LOITERING_THRESHOLD
+
+        has_gun = any(w in GUN_CLASS_IDS for w in visible_objects)
+        has_knife = KNIFE_CLASS_ID in visible_objects
+        has_atm = ATM_CLASS_ID in visible_objects
         has_weapon = has_gun or has_knife
 
         is_violent_action = action_label in ["shooting", "violence"]
 
-        if is_violent_action and has_weapon:
-            # CRITICAL
+        # 1. CRITICAL
+        if is_violent_action and (has_weapon or has_atm):
             if has_gun:
                 threat_level = "CRITICAL: SHOOTER"
-            else:
+            elif has_knife:
                 threat_level = "CRITICAL: KNIFE ATTACK"
+            elif has_atm:
+                 threat_level = "CRITICAL: ATM ROBBERY"
             box_color = (0, 0, 255)  # Red
 
+        # 2. HIGH (Weapon Visible)
         elif has_weapon:
-            # HIGH (Weapon detected but no violent action yet)
             threat_level = "HIGH: WEAPON DETECTED"
             box_color = (0, 165, 255)  # Orange
 
+        # 3. WARNING (Violence w/o Weapon)
         elif is_violent_action:
-            # WARNING (Violent action but no weapon visible)
             if action_label == "shooting":
                 threat_level = "WARN: SUSPICIOUS STANCE"
             else:
                 threat_level = "WARN: FIGHTING"
             box_color = (0, 255, 255)  # Yellow
+        
+        # 4. WARNING (Loitering at ATM)
+        elif has_atm and duration > ATM_LOITERING_THRESHOLD:
+            threat_level = "WARN: LOITERING AT ATM"
+            box_color = (0, 255, 255)  # Yellow
+        
+        # 5. WARNING (Unattended Baggage - Global)
+        elif is_unattended_bag:
+            threat_level = "WARN: UNATTENDED BAGGAGE"
+            box_color = (0, 255, 255) # Yellow
             
         return threat_level, box_color
 
