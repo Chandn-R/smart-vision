@@ -12,7 +12,4 @@ class Incident(Base):
     threat_level = Column(String)  # CRITICAL, HIGH, WARN
     label = Column(String)         # SHOOTER, FIGHTING, etc.
     confidence = Column(Float)
-    
-    # Store the full complex JSON payload as a JSON column (or Text if DB doesn't support JSON)
-    # SQLite supports JSON extensions in modern versions, but SQLAlchemy typically maps it to a JSON serializer.
     data = Column(JSON) 

@@ -5,9 +5,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 def send_telegram_alert(message: str):
-    """
-    Sends a message to the configured Telegram Chat.
-    """
     token = settings.TELEGRAM_BOT_TOKEN
     chat_id = settings.TELEGRAM_CHAT_ID
     
