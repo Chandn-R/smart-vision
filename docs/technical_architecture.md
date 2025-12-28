@@ -83,7 +83,7 @@ The pipeline processes video frames sequentially through five main stages:
 *   **Softmax**: Applied to model output logits to get probabilities.
 *   **Confidence Threshold**: `ACTION_CONFIDENCE_THRESHOLD = 0.70`.
     *   If `max(probs) > 0.70`, the action is accepted.
-    *   Otherwise, defaults to `Scanning...` or retains previous valid state (implementation dependent).
+    *   Otherwise, defaults to `normal` or retains previous valid state (implementation dependent).
 
 ---
 
