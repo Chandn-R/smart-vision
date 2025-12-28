@@ -10,15 +10,16 @@ LSTM_MODEL_PATH = os.path.join(ROOT_DIR, "models", "lstm_action_recognition_pro_
 INPUT_VIDEO_DIR = os.path.join(ROOT_DIR, "data", "input_videos")
 RESULTS_DIR = os.path.join(ROOT_DIR, "results")
 LOG_DIR = os.path.join(ROOT_DIR, "logs")
+SERVER_URL = "http://localhost:8000/api/v1/incidents"
 
 # --- PARAMETERS ---
 WEBCAM_ID = 0
-CONFIDENCE_THRESHOLD = 0.45
-ACTION_CONFIDENCE_THRESHOLD = 0.70 # Minimum confidence for LSTM action recognition
+CONFIDENCE_THRESHOLD = 0.50
+ACTION_CONFIDENCE_THRESHOLD = 0.85 # Minimum confidence for LSTM action recognition
 SEQUENCE_LENGTH = 30  # Must match training
 
 DRAW_PERSON_BOXES = True # Draw bounding boxes for persons
-DRAW_LABELS = True # Draw text labels (ID, Class Name)
+DRAW_LABELS = False # Draw text labels (ID, Class Name)
 
 
 
