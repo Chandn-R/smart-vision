@@ -25,7 +25,8 @@ from src.config import (
 
     PERSON_CLASS_ID,
     WEAPON_CLASS_IDS,
-    WEAPON_CLASS_IDS,
+    CONTEXT_CLASS_IDS,
+    UNATTENDED_BAG_THRESHOLD,
     get_color,
     DRAW_PERSON_BOXES,
     DRAW_LABELS,
@@ -119,9 +120,9 @@ def parse_detections(detector: YOLODetector, results) -> Tuple[List, List[int]]:
 
 def draw_weapon_boxes(detector: YOLODetector, frame: np.ndarray, results) -> List[int]:
     """
-    Draw bounding boxes for weapons and return visible weapon class ids.
+    Draw bounding boxes for weapons and context objects (ATM, Bags) and return visible class ids.
     """
-    visible_weapons: List[int] = []
+    visible_objects: List[int] = []
 
     for result in results:
         for box in result.boxes:
@@ -129,8 +130,8 @@ def draw_weapon_boxes(detector: YOLODetector, frame: np.ndarray, results) -> Lis
             cls_id = int(box.cls[0])
             conf = float(box.conf[0])
 
-            if cls_id in WEAPON_CLASS_IDS:
-                visible_weapons.append(cls_id)
+            if (cls_id in WEAPON_CLASS_IDS) or (cls_id in CONTEXT_CLASS_IDS):
+                visible_objects.append(cls_id)
                 class_name = detector.class_names.get(cls_id, "Unknown")
                 color = get_color(cls_id)
 
@@ -150,7 +151,7 @@ def draw_weapon_boxes(detector: YOLODetector, frame: np.ndarray, results) -> Lis
                         2,
                     )
 
-    return visible_weapons
+    return visible_objects
 
 
 def update_person_history(
@@ -162,7 +163,9 @@ def update_person_history(
     lstm_model,
     inv_class_map,
     threat_manager: ThreatManager,
-    visible_weapons: List[int],
+    visible_objects: List[int],
+    person_durations: Dict[int, float],
+    is_unattended_bag: bool,
 ):
     """
     Core per-frame logic: pose estimation, LSTM action recognition,
@@ -220,8 +223,9 @@ def update_person_history(
                     action_prob = top_p.item()
 
         # Threat logic
+        duration = person_durations.get(track_id, 0.0)
         threat_level, box_color = threat_manager.determine_threat(
-            action_label, visible_weapons
+            action_label, visible_objects, duration, is_unattended_bag
         )
         threat_manager.log_threat(
             track_id, "Stream", action_label, action_prob, threat_level
@@ -233,7 +237,7 @@ def update_person_history(
             cv2.rectangle(frame, (x1, y1), (x2, y2), person_color, 2)
             
             if DRAW_LABELS:
-                info_text = f"ID:{track_id}"
+                info_text = f"ID:{track_id} ({int(duration)}s)"
                 (tw, th), _ = cv2.getTextSize(info_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
                 cv2.rectangle(frame, (x1, y1 - 20), (x1 + tw, y1), person_color, -1)
                 cv2.putText(
@@ -278,6 +282,8 @@ def process_frame(
     tracker: ByteTracker,
     pose_estimator: MediaPipeEstimator,
     person_history: Dict[int, Deque[List[float]]],
+    state_data: Dict = None,
+    dt: float = 0.05,
 ):
     """
     Single-frame processing used by both CLI pipeline and Streamlit UI.
@@ -286,42 +292,44 @@ def process_frame(
     - processed_frame (BGR)
     - threat_messages (list of strings)
     """
+    if state_data is None:
+        state_data = {"person_durations": {}, "unattended_bag_timer": 0.0}
+
     # 1. YOLO
     results = run_yolo_detection(detector, frame)
 
-    # 2. Draw weapons and collect visible weapons
-    visible_weapons = []
-    for result in results:
-        for box in result.boxes:
-            x1, y1, x2, y2 = map(int, box.xyxy[0])
-            cls_id = int(box.cls[0])
-            if cls_id in WEAPON_CLASS_IDS:
-                # single place to draw
-                class_name = detector.class_names.get(cls_id, "Unknown")
-                color = get_color(cls_id)
-                visible_weapons.append(cls_id)
+    # 2. Draw weapons/context and collect visible objects
+    visible_objects = draw_weapon_boxes(detector, frame, results) # Use updated logic inside
 
-                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                
-                if DRAW_LABELS:
-                    label = f"{class_name}"
-                    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                    cv2.rectangle(frame, (x1, y1 - 25), (x1 + tw, y1), color, -1)
-                    cv2.putText(
-                        frame,
-                        label,
-                        (x1, y1 - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6,
-                        (255, 255, 255),
-                        2,
-                    )
-
+    # Update Unattended Bag Timer
+    # Check if there are Bags and NO persons
+    from src.config import BACKPACK_CLASS_ID, HANDBAG_CLASS_ID
+    has_bag = any(c in [BACKPACK_CLASS_ID, HANDBAG_CLASS_ID] for c in visible_objects)
+    
     # 3. Prepare detections for tracking
     detections_for_tracking, _ = parse_detections(detector, results)
 
     # 4. Tracking
     tracked_objects = tracker.update(detections_for_tracking)
+    
+    num_persons = len(tracked_objects)
+    
+    # Update state_data based on detections
+    if has_bag and num_persons == 0:
+        state_data["unattended_bag_timer"] += dt
+    else:
+        state_data["unattended_bag_timer"] = 0.0
+    
+    is_unattended_bag = state_data["unattended_bag_timer"] > UNATTENDED_BAG_THRESHOLD
+
+    # Update person durations
+    active_ids = []
+    for i in range(len(tracked_objects)):
+        tid = int(tracked_objects.tracker_id[i])
+        active_ids.append(tid)
+        state_data["person_durations"][tid] = state_data["person_durations"].get(tid, 0.0) + dt
+    
+    # Optional: cleanup stats for missing IDs? (Not strictly necessary for short clips, but good practice)
 
     # 5. Pose + LSTM + Threat
     threat_messages = update_person_history(
@@ -333,8 +341,23 @@ def process_frame(
         lstm_model=lstm_model,
         inv_class_map=inv_class_map,
         threat_manager=threat_manager,
-        visible_weapons=visible_weapons,
+        visible_objects=visible_objects,
+        person_durations=state_data["person_durations"],
+        is_unattended_bag=is_unattended_bag,
     )
+
+    # Handle separate case: Unattended bag with NO people (threat_messages empty so far)
+    if is_unattended_bag and num_persons == 0:
+        # We need to manually invoke threat manager or just append message
+        # Invoke threat manager to respect logging rules
+        t_level, t_color = threat_manager.determine_threat("normal", visible_objects, 0.0, True)
+        if t_level != "SAFE":
+             msg = f"⚠️ {t_level}"
+             threat_messages.append(msg)
+             threat_manager.log_threat(0, "Stream", "unattended", 1.0, t_level)
+             if DRAW_LABELS:
+                 # Draw big warning?
+                 cv2.putText(frame, t_level, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, t_color, 2)
 
     return frame, threat_messages
 
@@ -433,6 +456,14 @@ def _run_single_source_offline(
         )
         print(f"   recording to: {output_path}")
 
+        print(f"   recording to: {output_path}")
+
+    state_data = {
+        "person_durations": {},
+        "unattended_bag_timer": 0.0
+    }
+    last_time = time.time()
+    
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -440,6 +471,21 @@ def _run_single_source_offline(
                 print("   End of stream.")
             break
 
+        # Time delta
+        current_time = time.time()
+        dt = current_time - last_time
+        last_time = current_time
+        
+        # If webcam, dt is real time. If file, try to limit or use fixed?
+        # For simplicity in offline file, we can use 1/FPS if we wanted to simulate real speed,
+        # but here we just process as fast as possible. 
+        # However, to simulate duration properly, we should use 1/FPS for video files 
+        # and real time for webcam.
+        if is_webcam:
+            pass # dt is correct
+        elif fps > 0:
+            dt = 1.0 / fps # fixed step for files
+        
         frame, _ = process_frame(
             frame,
             detector,
@@ -450,6 +496,8 @@ def _run_single_source_offline(
             tracker,
             pose_estimator,
             person_history,
+            state_data=state_data,
+            dt=dt
         )
 
         if out_writer:
