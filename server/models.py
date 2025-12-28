@@ -12,4 +12,5 @@ class Incident(Base):
     threat_level = Column(String)  # CRITICAL, HIGH, WARN
     label = Column(String)         # SHOOTER, FIGHTING, etc.
     confidence = Column(Float)
+    image_path = Column(String)    # Path to saved snapshot
     data = Column(JSON) 

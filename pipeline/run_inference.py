@@ -261,7 +261,8 @@ def update_person_history(
             track_id, "Stream", action_label, action_prob, threat_level,
             frame_id=frame_id,
             detections=all_detections,
-            spatial_context=spatial_context
+            spatial_context=spatial_context,
+            frame=frame
         )
 
         # Draw person box and labels (if enabled)
@@ -285,7 +286,7 @@ def update_person_history(
 
         # Add visual threat label if needed
         if threat_level != "SAFE":
-            msg = f"⚠️ ID {track_id}: {threat_level} ({action_label})"
+            msg = f" ID {track_id}: {threat_level} ({action_label})"
             threat_messages.append(msg)
             
             if DRAW_LABELS:
@@ -393,13 +394,14 @@ def process_frame(
         spatial_context = { "atm_present": any(d['class_id'] == 0 for d in context_detections), "near_atm": False }
         t_level, t_color = threat_manager.determine_threat("normal", visible_object_ids, 0.0, True)
         if t_level != "SAFE":
-             msg = f"⚠️ {t_level}"
+             msg = f" {t_level}"
              threat_messages.append(msg)
              threat_manager.log_threat(
                  0, "Stream", "unattended", 1.0, t_level, 
                  frame_id=state_data.get("frame_count", 0),
                  detections=context_detections,
-                 spatial_context=spatial_context
+                 spatial_context=spatial_context,
+                 frame=frame
             )
              if DRAW_LABELS:
                  # Draw big warning?

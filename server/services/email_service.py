@@ -1,4 +1,5 @@
 import smtplib
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from ..config import settings
@@ -6,7 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def send_email_alert(subject: str, body: str):
+def send_email_alert(subject: str, body: str, image_path: str = None):
     """
     Sends an email alert using SMTP configuration.
     """
@@ -26,6 +27,13 @@ def send_email_alert(subject: str, body: str):
     msg['To'] = recipient
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
+    
+    if image_path and os.path.exists(image_path):
+        from email.mime.image import MIMEImage
+        with open(image_path, 'rb') as f:
+            img_data = f.read()
+            image = MIMEImage(img_data, name=os.path.basename(image_path))
+            msg.attach(image)
 
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
