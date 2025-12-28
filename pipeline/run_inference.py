@@ -118,11 +118,11 @@ def parse_detections(detector: YOLODetector, results) -> Tuple[List, List[int]]:
     return detections_for_tracking, visible_weapons
 
 
-def draw_weapon_boxes(detector: YOLODetector, frame: np.ndarray, results) -> List[int]:
+def draw_weapon_boxes(detector: YOLODetector, frame: np.ndarray, results) -> List[Dict]:
     """
-    Draw bounding boxes for weapons and context objects (ATM, Bags) and return visible class ids.
+    Draw bounding boxes for weapons and context objects (ATM, Bags) and return detailed detection list.
     """
-    visible_objects: List[int] = []
+    visible_objects: List[Dict] = []
 
     for result in results:
         for box in result.boxes:
@@ -131,10 +131,17 @@ def draw_weapon_boxes(detector: YOLODetector, frame: np.ndarray, results) -> Lis
             conf = float(box.conf[0])
 
             if (cls_id in WEAPON_CLASS_IDS) or (cls_id in CONTEXT_CLASS_IDS):
-                visible_objects.append(cls_id)
                 class_name = detector.class_names.get(cls_id, "Unknown")
+                
+                # Append detailed info
+                visible_objects.append({
+                    "class": class_name,
+                    "class_id": cls_id,
+                    "confidence": conf,
+                    "bbox": [x1, y1, x2, y2]
+                })
+                
                 color = get_color(cls_id)
-
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 
                 if DRAW_LABELS:
@@ -163,9 +170,10 @@ def update_person_history(
     lstm_model,
     inv_class_map,
     threat_manager: ThreatManager,
-    visible_objects: List[int],
+    context_detections: List[Dict],
     person_durations: Dict[int, float],
     is_unattended_bag: bool,
+    frame_id: int = 0
 ):
     """
     Core per-frame logic: pose estimation, LSTM action recognition,
@@ -179,9 +187,17 @@ def update_person_history(
     if len(tracked_objects) == 0:
         return threat_messages
 
+    # Extract IDs for logic
+    visible_object_ids = [d['class_id'] for d in context_detections]
+
+    from src.config import ATM_CLASS_ID
+    has_atm = ATM_CLASS_ID in visible_object_ids
+
     for i in range(len(tracked_objects)):
         x1, y1, x2, y2 = map(int, tracked_objects.xyxy[i])
         track_id = int(tracked_objects.tracker_id[i])
+        # Try to get confidence if available, else default
+        conf = float(tracked_objects.confidence[i]) if hasattr(tracked_objects, 'confidence') and tracked_objects.confidence is not None else 0.0
 
         if track_id not in person_history:
             person_history[track_id] = deque(maxlen=SEQUENCE_LENGTH)
@@ -225,10 +241,27 @@ def update_person_history(
         # Threat logic
         duration = person_durations.get(track_id, 0.0)
         threat_level, box_color = threat_manager.determine_threat(
-            action_label, visible_objects, duration, is_unattended_bag
+            action_label, visible_object_ids, duration, is_unattended_bag
         )
+        
+        # Prepare Logging Payload
+        person_detection = {
+            "class": "Person", 
+            "confidence": conf,
+            "bbox": [x1, y1, x2, y2],
+            "track_id": track_id
+        }
+        all_detections = [person_detection] + context_detections
+        spatial_context = {
+            "atm_present": has_atm,
+            "near_atm": has_atm # Simplified: if in frame, assumed 'near' for now
+        }
+
         threat_manager.log_threat(
-            track_id, "Stream", action_label, action_prob, threat_level
+            track_id, "Stream", action_label, action_prob, threat_level,
+            frame_id=frame_id,
+            detections=all_detections,
+            spatial_context=spatial_context
         )
 
         # Draw person box and labels (if enabled)
@@ -299,12 +332,15 @@ def process_frame(
     results = run_yolo_detection(detector, frame)
 
     # 2. Draw weapons/context and collect visible objects
-    visible_objects = draw_weapon_boxes(detector, frame, results) # Use updated logic inside
+    context_detections = draw_weapon_boxes(detector, frame, results) # Returns List[Dict]
+
+    # Extract class IDs for internal logic
+    visible_object_ids = [d['class_id'] for d in context_detections]
 
     # Update Unattended Bag Timer
     # Check if there are Bags and NO persons
     from src.config import BACKPACK_CLASS_ID, HANDBAG_CLASS_ID
-    has_bag = any(c in [BACKPACK_CLASS_ID, HANDBAG_CLASS_ID] for c in visible_objects)
+    has_bag = any(c in [BACKPACK_CLASS_ID, HANDBAG_CLASS_ID] for c in visible_object_ids)
     
     # 3. Prepare detections for tracking
     detections_for_tracking, _ = parse_detections(detector, results)
@@ -341,20 +377,30 @@ def process_frame(
         lstm_model=lstm_model,
         inv_class_map=inv_class_map,
         threat_manager=threat_manager,
-        visible_objects=visible_objects,
+        context_detections=context_detections,
         person_durations=state_data["person_durations"],
         is_unattended_bag=is_unattended_bag,
+        frame_id=state_data.get("frame_count", 0) # We need to track frame count
     )
+
+    state_data["frame_count"] = state_data.get("frame_count", 0) + 1
 
     # Handle separate case: Unattended bag with NO people (threat_messages empty so far)
     if is_unattended_bag and num_persons == 0:
         # We need to manually invoke threat manager or just append message
         # Invoke threat manager to respect logging rules
-        t_level, t_color = threat_manager.determine_threat("normal", visible_objects, 0.0, True)
+        # Pass context detections for payload
+        spatial_context = { "atm_present": any(d['class_id'] == 0 for d in context_detections), "near_atm": False }
+        t_level, t_color = threat_manager.determine_threat("normal", visible_object_ids, 0.0, True)
         if t_level != "SAFE":
              msg = f"⚠️ {t_level}"
              threat_messages.append(msg)
-             threat_manager.log_threat(0, "Stream", "unattended", 1.0, t_level)
+             threat_manager.log_threat(
+                 0, "Stream", "unattended", 1.0, t_level, 
+                 frame_id=state_data.get("frame_count", 0),
+                 detections=context_detections,
+                 spatial_context=spatial_context
+            )
              if DRAW_LABELS:
                  # Draw big warning?
                  cv2.putText(frame, t_level, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, t_color, 2)
