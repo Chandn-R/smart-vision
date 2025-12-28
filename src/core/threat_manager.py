@@ -67,16 +67,17 @@ class ThreatManager:
             
         return threat_level, box_color
 
-    def log_threat(self, track_id, source_name, action_label, action_prob, threat_level):
+    def log_threat(self, track_id, source_name, action_label, action_prob, threat_level, frame_id=0, detections=[], spatial_context={}):
         """
         Logs the threat if conditions are met (rate limiting, etc.).
         """
         if threat_level == "SAFE":
             return
 
-        if action_label in LOGGABLE_THREATS:
+        # Always log to console/file if it matches basic criteria
+        if action_label in LOGGABLE_THREATS or "CRITICAL" in threat_level or "HIGH" in threat_level or "WARN" in threat_level:
             current_time = time.time()
-            # User requested "one type of log every 30 sec", so we track by action_label (threat type)
+            # Rate limiting by threat type
             last_time = self.last_log_time.get(action_label, 0)
             
             if (current_time - last_time) > LOG_COOLDOWN:
@@ -90,3 +91,39 @@ class ThreatManager:
                     self.logger.warning(log_msg)
                 
                 self.last_log_time[action_label] = current_time
+
+                # --- SEND TO SERVER ---
+                from src.config import SERVER_URL
+                if SERVER_URL:
+                    payload = {
+                        "camera_id": source_name,
+                        "threat_level": threat_level,
+                        "label": action_label.upper(),
+                        "confidence": float(action_prob),
+                        "data": {
+                            "frame_id": frame_id,
+                            "detections": detections,
+                            "action_classification": {
+                                "class": action_label,
+                                "confidence": float(action_prob),
+                                "track_id": track_id
+                            },
+                            "spatial_context": spatial_context
+                        }
+                    }
+                    self._send_alert_async(SERVER_URL, payload)
+
+    def _send_alert_async(self, url, payload):
+        import threading
+        import requests
+        import json
+        
+        def _send():
+            try:
+                headers = {'Content-Type': 'application/json'}
+                requests.post(url, data=json.dumps(payload), headers=headers, timeout=2)
+            except Exception as e:
+                # Silently fail or log debug to avoid spamming console
+                pass 
+
+        threading.Thread(target=_send, daemon=True).start()
