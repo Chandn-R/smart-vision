@@ -50,19 +50,19 @@ class ThreatManager:
         # 3. WARNING (Violence w/o Weapon)
         elif is_violent_action:
             if action_label == "shooting":
-                threat_level = "WARN: SUSPICIOUS STANCE"
+                threat_level = "WARNING: SUSPICIOUS STANCE"
             else:
-                threat_level = "WARN: FIGHTING"
+                threat_level = "WARNING: FIGHTING"
             box_color = (0, 255, 255)  # Yellow
         
         # 4. WARNING (Loitering at ATM)
         elif has_atm and duration > ATM_LOITERING_THRESHOLD:
-            threat_level = "WARN: LOITERING AT ATM"
+            threat_level = "WARNING: LOITERING AT ATM"
             box_color = (0, 255, 255)  # Yellow
         
         # 5. WARNING (Unattended Baggage - Global)
         elif is_unattended_bag:
-            threat_level = "WARN: UNATTENDED BAGGAGE"
+            threat_level = "WARNING: UNATTENDED BAGGAGE"
             box_color = (0, 255, 255) # Yellow
             
         return threat_level, box_color

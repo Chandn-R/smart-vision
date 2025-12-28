@@ -25,7 +25,7 @@ DRAW_LABELS = False # Draw text labels (ID, Class Name)
 
 # --- THREAT LOGIC ---
 LOGGABLE_THREATS = ["violence", "shooting"]
-LOG_COOLDOWN = 10.0  # Seconds between logs for the same threat type
+LOG_COOLDOWN = 30.0  # Seconds between logs for the same threat type
 
 # --- CLASS DEFINITIONS ---
 CLASS_COLORS = {
