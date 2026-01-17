@@ -9,3 +9,11 @@ pillow
 pyyaml
 sympy
 networkx
+# Web / API
+fastapi
+uvicorn
+streamlit
+python-dotenv
+pydantic
+# Database
+sqlalchemy
