@@ -157,7 +157,79 @@ def run_streamlit_inference(source_path: str):
     cap.release()
 
 
-def main():
+import requests
+import pandas as pd
+
+# ... (Previous imports remain, but added requests and pandas)
+
+def show_alert_history():
+    st.title(" Alert History")
+    
+    # API Endpoint (Hardcoded for now based on context)
+    API_URL = "http://127.0.0.1:8000/api/v1/incidents"
+    
+    try:
+        response = requests.get(API_URL, params={"limit": 50})
+        if response.status_code == 200:
+            alerts = response.json()
+            
+            if not alerts:
+                st.info("No alerts found.")
+                return
+
+            # Convert to DataFrame for easier display
+            df = pd.DataFrame(alerts)
+            
+            # Select relevant columns for the overview
+            if not df.empty:
+                # Reorder/rename columns if they exist
+                cols_to_show = ["id", "created_at", "threat_level", "label", "confidence", "camera_id"]
+                # Filter only columns that actually exist in the response
+                available_cols = [c for c in cols_to_show if c in df.columns]
+                
+                st.dataframe(df[available_cols], use_container_width=True)
+
+                st.subheader("Details")
+                # Expandable details for each alert
+                for alert in alerts:
+                    with st.expander(f"{alert['created_at']} - {alert['threat_level']} ({alert['label']})"):
+                        cols = st.columns([1, 2])
+                        with cols[0]:
+                            if alert.get("image_path"):
+                                # Ensure we are constructing the path correctly relative to project root
+                                # DB stores: "server/static/alerts/filename.jpg"
+                                # ROOT_DIR is: /Users/chandan/Documents/smart-vision
+                                
+                                # 1. Try direct join
+                                img_path = os.path.join(ROOT_DIR, alert["image_path"])
+                                
+                                # 2. If not found, try stripping leading slash if present (though unlikely)
+                                if not os.path.exists(img_path):
+                                     img_path = os.path.join(ROOT_DIR, alert["image_path"].lstrip('/'))
+                                
+                                if os.path.exists(img_path):
+                                    st.image(img_path, caption="Snapshot")
+                                else:
+                                    st.warning(f"Image not found at: {img_path}")
+                                    st.caption(f"Debug: ROOT_DIR={ROOT_DIR}, DB Path={alert['image_path']}")
+                            else:
+                                st.info("No snapshot available")
+                        
+                        with cols[1]:
+                            st.write(f"**ID:** {alert['id']}")
+                            st.write(f"**Camera:** {alert['camera_id']}")
+                            st.write(f"**Confidence:** {alert['confidence']:.2f}")
+                            st.json(alert['data']) # Show raw detection data
+
+        else:
+            st.error(f"Failed to fetch alerts. Status: {response.status_code}")
+    
+    except Exception as e:
+        st.error(f"Error connecting to API: {e}")
+
+
+def run_streamlit_inference_page():
+    # This was the old 'main' logic for the dashboard
     st.sidebar.title("Configuration")
 
     runtime = init_models_and_helpers()
@@ -207,6 +279,20 @@ def main():
             run_streamlit_inference(source_path)
         else:
             st.error("Please select a valid source.")
+
+
+def main():
+    st.sidebar.title("SmartVision Pro")
+    
+    app_mode = st.sidebar.radio(
+        "Navigate",
+        ["Live Dashboard", "Alert History"]
+    )
+    
+    if app_mode == "Live Dashboard":
+        run_streamlit_inference_page()
+    elif app_mode == "Alert History":
+        show_alert_history()
 
 
 if __name__ == "__main__":

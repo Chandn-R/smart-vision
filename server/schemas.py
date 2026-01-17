@@ -35,6 +35,7 @@ class IncidentCreate(BaseModel):
 class IncidentResponse(IncidentCreate):
     id: str
     created_at: datetime
+    image_path: Optional[str] = None
     
     class Config:
         from_attributes = True

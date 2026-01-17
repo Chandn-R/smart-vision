@@ -14,7 +14,7 @@ SERVER_URL = "http://localhost:8000/api/v1/incidents"
 
 # --- PARAMETERS ---
 WEBCAM_ID = 0
-CONFIDENCE_THRESHOLD = 0.50
+CONFIDENCE_THRESHOLD = 0.4
 ACTION_CONFIDENCE_THRESHOLD = 0.85 # Minimum confidence for LSTM action recognition
 SEQUENCE_LENGTH = 30  # Must match training
 
