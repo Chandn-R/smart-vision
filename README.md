@@ -39,8 +39,12 @@ python3 -m venv env
 # Activate Environment
 source env/bin/activate
 
-# Install Dependencies
-pip install -r environment/requirements.txt
+# Install Dependencies (Choose your OS)
+# For macOS (Apple Silicon optimized):
+pip install -r environment/requirements-macos.txt
+
+# For Windows:
+pip install -r environment/requirements-windows.txt
 ```
 
 ### 2. Verify Models
@@ -64,6 +68,7 @@ smart-vision/
 │   ├── incidents.db        # SQLite database for alerts
 │   └── processed/          # Intermediate output
 ├── env/                    # Virtual Environment
+├── environment/            # Requirement files (Mac/Win)
 ├── logs/                   # System and Threat logs
 ├── models/                 # ML Models (YOLO, LSTM)
 ├── pipeline/
